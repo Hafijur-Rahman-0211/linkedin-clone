@@ -7,73 +7,98 @@ import AssignmentIcon from "@mui/icons-material/Assignment";
 import "./css/Feed.css";
 import Post from "./Post";
 import { db, serverTimestamp } from "./firebase";
-import { collection, addDoc } from "firebase/firestore"; // Import required functions
+import {
+    collection,
+    addDoc,
+    query,
+    orderBy,
+    onSnapshot,
+} from "firebase/firestore"; // Import required functions
 
 const Feed = () => {
-  const [input, setInput] = useState("");
+    const [posts, setPosts] = useState([]);
+    const [input, setInput] = useState("");
 
-  const submitPost = async (e) => {
-    e.preventDefault();
-    console.log(input);
-    try {
-      await addDoc(collection(db, "posts"), {
-        name: "Hafijur Rahman",
-        description: "Software Engineer",
-        message: input,
-        photoUrl: "",
-        timestamp: serverTimestamp(),
-      });
-      setInput("");
-    } catch (error) {
-      console.error("Error adding document: ", error);
-    }
-  };
+    const submitPost = async (e) => { 
+        e.preventDefault();
+        console.log(input);
+        try {
+            await addDoc(collection(db, "posts"), {
+                name: "Hafijur Rahman",
+                description: "Software Engineer",
+                message: input,
+                photoUrl: "",
+                timestamp: serverTimestamp(),
+            });
+            setInput("");
+        } catch (error) {
+            console.error("Error adding document: ", error);
+        }
+    };
 
-  useEffect(() => {}, []);
+    useEffect(() => {
+        const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            setPosts(
+                snapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    data: doc.data(),
+                }))
+            );
+        });
 
-  return (
-    <div className="feed">
-      <div className="feed__input">
-        <div className="feed__form">
-          <Avatar src="" />
-          <form onSubmit={submitPost}>
-            <input
-              type="text"
-              placeholder="Start a post"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-            />
-            <input type="submit" />
-          </form>
+        // Cleanup the listener on component unmount
+        return () => unsubscribe();
+    }, []);
+
+    return (
+        <div className="feed">
+            <div className="feed__input">
+                <div className="feed__form">
+                    <Avatar src="" />
+                    <form onSubmit={submitPost}>
+                        <input
+                            type="text"
+                            placeholder="Start a post"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                        />
+                        <input type="submit" />
+                    </form>
+                </div>
+
+                <div className="feed__options">
+                    <div className="option">
+                        <InsertPhotoIcon style={{ color: "#70b5f9" }} />
+                        <span>Photo</span>
+                    </div>
+                    <div className="option">
+                        <YouTubeIcon style={{ color: "#7fc15e" }} />
+                        <span>Video</span>
+                    </div>
+                    <div className="option">
+                        <CalendarTodayIcon style={{ color: "#e7a33e" }} />
+                        <span>Event</span>
+                    </div>
+                    <div className="option">
+                        <AssignmentIcon style={{ color: "#fc9295" }} />
+                        <span>Write Article</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Dynamically rendering posts */}
+            {posts.map(({ id, data }) => (
+                <Post
+                    key={id}
+                    name={data.name}
+                    description={data.description}
+                    message={data.message}
+                    photoURL={data.photoUrl}
+                />
+            ))}
         </div>
-
-        <div className="feed__options">
-          <div className="option">
-            <InsertPhotoIcon style={{ color: "#70b5f9" }} />
-            <span>Photo</span>
-          </div>
-          <div className="option">
-            <YouTubeIcon style={{ color: "#7fc15e" }} />
-            <span>Video</span>
-          </div>
-          <div className="option">
-            <CalendarTodayIcon style={{ color: "#e7a33e" }} />
-            <span>Event</span>
-          </div>
-          <div className="option">
-            <AssignmentIcon style={{ color: "#fc9295" }} />
-            <span>Write Article</span>
-          </div>
-        </div>
-      </div>
-      <Post
-        name="Hafijur Rahman"
-        description="This is a test"
-        message="Lorem ipsum dolor sit amet consectetur adipisicing elit. Error officiis eaque eum consequuntur neque, a tenetur magnam dignissimos est! Iure dolor officia voluptatum!"
-        photoURL=""
-      />
-    </div>
-  );
+    );
 };
 
 export default Feed;
