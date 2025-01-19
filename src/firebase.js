@@ -1,6 +1,7 @@
 // Import Firebase and Firestore using named imports
 import { initializeApp } from "firebase/app";
 import { getFirestore, serverTimestamp } from "firebase/firestore";
+import { getAuth } from "firebase/auth"; // Import getAuth for authentication
 
 // Firebase configuration
 const firebaseConfig = {
@@ -18,7 +19,8 @@ const firebaseApp = initializeApp(firebaseConfig);
 // Initialize Firestore
 const db = getFirestore(firebaseApp);
 
-const auth = firebaseApp.auth();
+// Initialize Firebase Auth
+const auth = getAuth(firebaseApp); // Use getAuth instead of firebaseApp.auth()
 
-// Export Firestore and serverTimestamp for use in other parts of the app
+// Export Firestore, serverTimestamp, and auth for use in other parts of the app
 export { db, serverTimestamp, auth };
