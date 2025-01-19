@@ -1,5 +1,8 @@
 import React, { useState } from "react";
 import "./css/Login.css";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { useDispatch } from "react-redux";
+import { loginuser } from "./feature/userSlice";
 
 const Login = () => {
     const [signup, setSignUp] = useState(false);
@@ -7,6 +10,9 @@ const Login = () => {
     const [photoURL, setPhotoURL] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+
+    const dispatch = useDispatch();
+    const auth = getAuth();
 
     const register = (e) => {
         e.preventDefault();
@@ -24,8 +30,52 @@ const Login = () => {
             return alert("Please enter your password");
         }
 
+        createUserWithEmailAndPassword(auth, email, password)
+            .then((userCredential) => {
+                const user = userCredential.user;
+                updateProfile(user, {
+                    displayName: name,
+                    photoURL: photoURL,
+                }).then(() => {
+                    dispatch(
+                        loginuser({
+                            email: user.email,
+                            uid: user.uid,
+                            displayName: name,
+                            photoURL: photoURL,
+                        })
+                    );
+                });
+            })
+            .catch((error) => alert(error.message));
+
         setName("");
         setPhotoURL("");
+        setEmail("");
+        setPassword("");
+    };
+
+    const login = (e) => {
+        e.preventDefault();
+
+        if (!email || !password) {
+            return alert("Please enter your email and password");
+        }
+
+        signInWithEmailAndPassword(auth, email, password)
+            .then((userCredential) => {
+                const user = userCredential.user;
+                dispatch(
+                    loginuser({
+                        email: user.email,
+                        uid: user.uid,
+                        displayName: user.displayName,
+                        photoURL: user.photoURL,
+                    })
+                );
+            })
+            .catch((error) => alert(error.message));
+
         setEmail("");
         setPassword("");
     };
@@ -69,9 +119,19 @@ const Login = () => {
                     </h4>
                 </form>
             ) : (
-                <form action="">
-                    <input type="email" placeholder="Email" />
-                    <input type="password" placeholder="Password" />
+                <form onSubmit={login}>
+                    <input
+                        type="email"
+                        placeholder="Email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+                    <input
+                        type="password"
+                        placeholder="Password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                    />
                     <input type="submit" value="Sign In" />
                     <h4>
                         Not a member?{" "}
